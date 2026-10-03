@@ -1,5 +1,13 @@
+// Two builds of the same client: `client` for Node (next dev, scripts),
+// `cloudflare` for the Workers bundle. package.json picks one per command.
 generator client {
   provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+generator cloudflare {
+  provider = "prisma-client"
+  runtime  = "cloudflare"
   output   = "../src/generated/prisma"
 }
 

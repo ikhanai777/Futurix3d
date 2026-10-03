@@ -1,0 +1,13 @@
+# Local secrets for `npm run cf:preview` (wrangler dev). Copy to .dev.vars; same keys as .env.example.
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/printables?schema=public"
+NEXT_PUBLIC_APP_URL="http://localhost:8787"
+ADMIN_EMAIL="you@example.com"
+AUTH_SECRET=""
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+R2_ACCOUNT_ID=""
+R2_ACCESS_KEY_ID=""
+R2_SECRET_ACCESS_KEY=""
+R2_BUCKET="printables"
+RESEND_API_KEY=""
+EMAIL_FROM="Store <store@yourdomain.com>"

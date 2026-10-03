@@ -21,7 +21,11 @@ const allowed: Record<string, RegExp> = {
 
 /** Returns a presigned PUT so the browser uploads straight to R2. Model files land under a private prefix. */
 export async function POST(request: Request) {
-  await requireAdmin();
+  try {
+    await requireAdmin();
+  } catch {
+    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  }
   const parsed = schema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Invalid upload" }, { status: 400 });
   const { productId, filename, contentType, kind } = parsed.data;

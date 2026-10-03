@@ -34,6 +34,24 @@ Stripe's `checkout.session.completed` webhook records the order and grants entit
 
 Vercel for the app, Neon for Postgres, R2 for files. Set every variable from `.env.example` in the Vercel project, run `npx prisma migrate deploy` against the production database, and point a Stripe webhook at `/api/webhooks/stripe` for `checkout.session.completed` and `charge.refunded`.
 
+## Deploy on Cloudflare Workers (about $5/month)
+
+The app also runs on Cloudflare Workers through the OpenNext adapter (`wrangler.jsonc`, `open-next.config.ts`).
+
+```bash
+cp .dev.vars.example .dev.vars   # fill in, then preview locally in the Workers runtime:
+npm run cf:preview               # http://localhost:8787
+npx wrangler login
+npx wrangler secret bulk .dev.vars   # upload secrets (use production values)
+npm run cf:deploy
+```
+
+Prisma needs a different build of its client on Workers, so the schema has two generators writing to the same folder: `client` for Node (`npm install`, `next dev`, scripts) and `cloudflare` for the Workers bundle. `npm run cf:build` switches to the Workers client, builds, and switches back. Don't run a bare `prisma generate`; use `prisma generate --generator client`.
+
+Workers can't reuse a database connection across requests, so `src/lib/db.ts` gives each request its own Prisma client when running on Workers. Admin access is checked in the admin layout, every admin server action, and the upload API (there is no `proxy.ts`, since OpenNext doesn't support Node-runtime proxies yet).
+
+Run migrations from your machine against the production database: `DATABASE_URL=... npx prisma migrate deploy`.
+
 ## Not yet built
 
 Per the spec these come in later phases: bundles, filters, reviews, membership (Stripe Billing), automatic preview-mesh generation on upload (for now upload a `.glb` you decimate yourself), download stamping with the order id, and TOTP for the admin account.

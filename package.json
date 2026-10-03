@@ -6,21 +6,45 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "tsx prisma/seed.ts",
+    "postinstall": "prisma generate --generator client",
+    "cf:build": "prisma generate --generator cloudflare && opennextjs-cloudflare build && prisma generate --generator client",
+    "cf:preview": "npm run cf:build && wrangler dev",
+    "cf:deploy": "npm run cf:build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1146.0",
+    "@aws-sdk/s3-request-presigner": "^3.1146.0",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
+    "dotenv": "^18.0.5",
+    "jose": "^6.2.12",
     "next": "16.3.8",
+    "pg": "^8.23.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "resend": "^6.32.0",
+    "stripe": "^23.0.0",
+    "three": "^0.186.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "prisma": "^7.10.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "wrangler": "^4.147.0"
   }
 }

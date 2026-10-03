@@ -1,0 +1,182 @@
+// Two builds of the same client: `client` for Node (next dev, scripts),
+// `cloudflare` for the Workers bundle. package.json picks one per command.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+generator cloudflare {
+  provider = "prisma-client"
+  runtime  = "cloudflare"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum FileFormat {
+  STL
+  THREEMF
+}
+
+enum License {
+  PERSONAL
+  COMMERCIAL
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum EntitlementSource {
+  ORDER
+  MEMBERSHIP
+  MANUAL
+}
+
+model Product {
+  id                   String         @id @default(cuid())
+  slug                 String         @unique
+  title                String
+  description          String
+  status               ProductStatus  @default(DRAFT)
+  priceCents           Int
+  commercialPriceCents Int?
+  tags                 String[]
+  printSettings        Json?
+  currentVersionId     String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  versions     ProductVersion[]
+  images       ProductImage[]
+  orderItems   OrderItem[]
+  entitlements Entitlement[]
+}
+
+model ProductVersion {
+  id        String   @id @default(cuid())
+  productId String
+  version   Int
+  changelog String?
+  createdAt DateTime @default(now())
+
+  product Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  files   ModelFile[]
+
+  @@unique([productId, version])
+}
+
+model ModelFile {
+  id            String     @id @default(cuid())
+  versionId     String
+  filename      String
+  format        FileFormat
+  sizeBytes     Int
+  triangleCount Int?
+  bboxMm        Json?
+  r2Key         String
+  previewGlbKey String?
+  createdAt     DateTime   @default(now())
+
+  version   ProductVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  downloads Download[]
+}
+
+model ProductImage {
+  id        String @id @default(cuid())
+  productId String
+  r2Key     String
+  alt       String
+  sortOrder Int    @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  stripeCustomerId String?  @unique
+  createdAt        DateTime @default(now())
+
+  orders       Order[]
+  entitlements Entitlement[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  customerId      String
+  stripeSessionId String      @unique
+  subtotalCents   Int
+  taxCents        Int         @default(0)
+  totalCents      Int
+  currency        String      @default("usd")
+  status          OrderStatus @default(PENDING)
+  createdAt       DateTime    @default(now())
+
+  customer Customer    @relation(fields: [customerId], references: [id])
+  items    OrderItem[]
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  productId  String
+  license    License
+  priceCents Int
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Entitlement {
+  id         String            @id @default(cuid())
+  customerId String
+  productId  String
+  license    License
+  source     EntitlementSource @default(ORDER)
+  orderId    String?
+  revokedAt  DateTime?
+  createdAt  DateTime          @default(now())
+
+  customer  Customer   @relation(fields: [customerId], references: [id])
+  product   Product    @relation(fields: [productId], references: [id])
+  downloads Download[]
+
+  @@index([customerId, productId])
+}
+
+model Download {
+  id            String   @id @default(cuid())
+  entitlementId String
+  modelFileId   String
+  ipHash        String?
+  createdAt     DateTime @default(now())
+
+  entitlement Entitlement @relation(fields: [entitlementId], references: [id])
+  modelFile   ModelFile   @relation(fields: [modelFileId], references: [id])
+
+  @@index([entitlementId, createdAt])
+}
+
+model MagicLinkToken {
+  id        String   @id @default(cuid())
+  email     String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model ProcessedStripeEvent {
+  id          String   @id
+  processedAt DateTime @default(now())
+}
